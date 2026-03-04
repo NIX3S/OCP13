@@ -1,0 +1,79 @@
+<div class="chess-container">
+  <header class="header">
+    <h1>♔ Agent IA Échecs FFE ♛</h1>
+    <div class="fen-display">
+      <code>FEN: {{ fen }}</code>
+      <button class="btn-reset" (click)="resetBoard()">🔄 Reset</button>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- Zone échiquier -->
+    <div class="board-zone">
+      <ngx-chess-board
+        #board
+        [size]="480"
+        [showCoords]="true"
+        [showLegalMoves]="true"
+        [freeMode]="false"
+        (moveChange)="onMoveChange($event)">
+      </ngx-chess-board>
+    </div>
+
+    <!-- Panneau Agent IA -->
+    <div class="agent-panel">
+      <div class="section eval" *ngIf="stockfishEval">
+        <h3>⚡ Stockfish</h3>
+        <div class="eval-card">
+          <p>Score: <strong>{{ stockfishEval.score }}</strong></p>
+          <p>Meilleur: <strong>{{ stockfishEval.bestMove }}</strong></p>
+        </div>
+      </div>
+
+      <div class="section agent" *ngIf="agentRecommendation">
+        <h3>🤖 Agent IA FFE</h3>
+        <p><strong>Ouverture</strong> : {{ agentRecommendation.opening }}</p>
+        <p><strong>Meilleur coup</strong> : <code>{{ getAgentFirstMove() }}</code></p>
+
+        <div class="context" *ngIf="agentRecommendation.context?.length">
+          <h4>📖 Contexte</h4>
+          <ul>
+            <li *ngFor="let ctx of agentRecommendation.context">
+              <strong>{{ ctx.opening }}</strong><br />
+              <small>{{ ctx.content }}</small>
+              (score: {{ ctx.score | number: '1.2-2' }})
+            </li>
+          </ul>
+        </div>
+
+        <div class="videos" *ngIf="agentRecommendation.videos?.length">
+          <h4>🎥 Vidéos pédagogiques</h4>
+          <ul>
+            <li *ngFor="let video of agentRecommendation.videos">
+              <a [href]="video.url" target="_blank" rel="noopener">
+                {{ video.title }} ({{ video.channel }})
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section moves" *ngIf="theoreticalMoves.length">
+        <h3>🎯 Coups théoriques (Lichess)</h3>
+        <div class="moves-grid">
+          <button
+            *ngFor="let move of theoreticalMoves"
+            class="move-btn"
+            (click)="board.move(move.uci)">
+            {{ move.uci }}
+            <span>({{ move.whiteWins }}%)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="section loading" *ngIf="loading">
+        <p>Chargement des données...</p>
+      </div>
+    </div>
+  </div>
+</div>

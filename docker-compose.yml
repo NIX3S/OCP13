@@ -1,0 +1,151 @@
+version: '3.8'
+
+x-common-vars: &common-vars
+  MILVUS_HOST: milvus
+  MILVUS_PORT: 19530
+  MONGODB_URL: mongodb://mongo:27017/chessdb
+  MINIO_ENDPOINT: http://minio:9000
+  ETCD_ENDPOINTS: http://etcd:2379
+
+services:
+  # Backend FastAPI + LangGraph + Qwen2.5 7B
+  backend:
+    build: ./backend
+    container_name: chess_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      <<: *common-vars
+      MODEL_PATH: /models/Qwen_2.5_7b_instruct
+    volumes:
+      - ./backend:/app
+    depends_on:
+      milvus:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - chess-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Angular + ngx-chessboard
+  frontend:
+    build: ./frontend
+    container_name: chess-agent-frontend
+    ports:
+      - "4200:4200"
+    environment:
+      - API_URL=http://backend:8000  # Résolution Docker network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    #depends_on:
+      #backend:
+        #condition: service_healthy
+    networks:
+      - chess-network
+    restart: always
+
+  # MongoDB
+  mongo:
+    image: mongo:7
+    container_name: chess_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - chess-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # etcd (standalone Milvus)
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.15
+    container_name: chess_etcd
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+    volumes:
+      - etcd_data:/etcd
+    command: >
+      etcd -advertise-client-urls=http://0.0.0.0:2379
+      -listen-client-urls=http://0.0.0.0:2379
+      -data-dir=/etcd
+    networks:
+      - chess-network
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 10s
+
+  # MinIO (S3-compatible pour Milvus)
+  minio:
+    image: minio/minio:latest
+    container_name: chess_minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - chess-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+
+  # Milvus Standalone (v2.3.9 stable)
+  milvus:
+    image: milvusdb/milvus:v2.3.9
+    container_name: chess_milvus
+    command: ["milvus", "run", "standalone"]
+    environment:
+      - ETCD_ENDPOINTS=etcd:2379
+      - MINIO_ADDRESS=minio:9000
+      - COMMON_STORAGE_TYPE=minio
+    volumes:
+      - milvus_data:/var/lib/milvus
+    ports:
+      - "19530:19530"  # gRPC
+      - "9091:9091"    # Management
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - chess-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  mongo_data:
+  etcd_data:
+  minio_data:
+  milvus_data:
+
+networks:
+  chess-network:
+    driver: bridge

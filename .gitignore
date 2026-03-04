@@ -1,0 +1,30 @@
+# Volumes, secrets, venv
+volumes/
+.env
+/od/
+/old/
+.venv/
+node_modules/
+.vscode/
+.angular/
+
+# Frontend
+chess-agent-frontend/node_modules/
+chess-agent-frontend/dist/
+chess-agent-frontend/.angular/
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+
+# Mongo
+init-mongo.js
+
+# Tests & docs
+test/
+commande_lancement.txt
+config.txt
+"Quand tu dois faire quoi.txt"
+test.txt
+*.log

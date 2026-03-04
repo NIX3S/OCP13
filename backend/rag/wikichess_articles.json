@@ -1,0 +1,192 @@
+[
+  {
+    "opening": "Italienne",
+    "content": "L'ouverture italienne commence par 1.e4 e5 2.Nf3 Nc6 3.Bc4 et vise le contrôle du centre avec un développement rapide des pièces."
+  },
+  {
+    "opening": "Espagnole",
+    "content": "L'ouverture espagnole (Ruy Lopez) débute par 1.e4 e5 2.Nf3 Nc6 3.Bb5 et cherche à exercer une pression sur le cavalier c6 et le pion e5."
+  },
+  {
+    "opening": "Sicilienne",
+    "content": "L'ouverture sicilienne commence par 1.e4 c5 et mène à des positions asymétriques avec de nombreuses possibilités tactiques."
+  },
+  {
+    "opening": "Française",
+    "content": "L'ouverture française commence par 1.e4 e6 et vise à solidifier le centre noir tout en préparant le contre-jeu sur la colonne d."
+  },
+  {
+    "opening": "Caro-Kann",
+    "content": "L'ouverture Caro-Kann commence par 1.e4 c6 et se caractérise par une structure solide pour les Noirs et un jeu plus positionnel."
+  },
+  {
+    "opening": "Amar Gambit",
+    "content": "L'Amar Gambit débute par des coups inhabituels des Blancs avec sacrifice de pion, visant un développement rapide et une attaque sur le roi noir."
+  },
+  {
+    "opening": "Amar Opening: Gent Gambit",
+    "content": "Variante du Gambit Gent dans l'Amar Opening, les Blancs sacrifient un pion pour obtenir un développement rapide du roque après g4."
+  },
+  {
+    "opening": "Amar Opening: Paris Gambit",
+    "content": "Le Paris Gambit de l'Amar Opening voit les Blancs jouer f4 agressivement pour ouvrir des lignes et attaquer le centre noir tôt."
+  },
+  {
+    "opening": "Amsterdam Attack",
+    "content": "L'Amsterdam Attack est une ouverture agressive jouée par les Blancs avec d4 et développement rapide des pièces pour attaque centrale."
+  },
+  {
+    "opening": "Anderssen Opening",
+    "content": "L'Opening Anderssen commence par a3, un coup flexible qui prépare souvent b4 ou c4 tout en contrôlant b4 pour éviter Nb4."
+  },
+  {
+    "opening": "Anderssen Opening: Polish Gambit",
+    "content": "Gambit polonais de l'Opening Anderssen où les Blancs sacrifient le pion b pour un développement ultra-rapide et pression centrale."
+  },
+  {
+    "opening": "Barnes Opening: Fool's Mate",
+    "content": "Variante menant au Fool's Mate dans l'Opening Barnes, illustration extrême du danger de f4 précoce face à une réponse noire précise."
+  },
+  {
+    "opening": "Barnes Opening: Gedult Gambit #2",
+    "content": "Deuxième variante du Gambit Gedult dans l'Opening Barnes, avec développement du cavalier et attaque sur le centre noir."
+  },
+  {
+    "opening": "Barnes Opening: Gedult Gambit",
+    "content": "Le Gambit Gedult de l'Opening Barnes sacrifie un pion pour ouvrir des lignes et obtenir un avantage de développement."
+  },
+  {
+    "opening": "Barnes Opening: Hammerschlag",
+    "content": "L'Hammerschlag dans l'Opening Barnes voit le roi blanc roquer tôt pour lancer une attaque directe sur le flanc roi."
+  },
+  {
+    "opening": "Barnes Opening: Walkerling",
+    "content": "Variante Walkerling de l'Opening Barnes avec développement du fou en c4 et attaque potentielle sur f7."
+  },
+  {
+    "opening": "Clemenz Opening",
+    "content": "L'Opening Clemenz débute par h3, un coup profilactique contrôlant g4 et g5 tout en gardant la flexibilité pour f4."
+  },
+  {
+    "opening": "Clemenz Opening: Spike Lee Gambit",
+    "content": "Gambit Spike Lee du Clemenz Opening avec sacrifice de pion h pour ouvrir le flanc roi et attaquer directement."
+  },
+  {
+    "opening": "Crab Opening",
+    "content": "L'Opening Crabe est caractérisé par a4 précoce, un coup hypermoderne visant à contrôler b5 et préparer une expansion queenside."
+  },
+  {
+    "opening": "Creepy Crawly Formation: Classical Defense",
+    "content": "Formation Creepy Crawly avec défense classique des Noirs, position fermée où les Blancs préparent une attaque lente."
+  },
+  {
+    "opening": "Formation: Cabbage Attack",
+    "content": "Attaque Chou-Fleur, formation agressive des Blancs avec pions avancés et pression sur le centre noir affaibli."
+  },
+  {
+    "opening": "Formation: Hippopotamus Attack",
+    "content": "Attaque Hippopotamus, système universel où les Noirs placent tous leurs pions sur la 6e rangée pour un contre-jeu solide."
+  },
+  {
+    "opening": "Formation: Shy Attack",
+    "content": "Attaque Timide utilisant la formation Hippopotamus avec développement discret mais préparation d'une attaque centrale."
+  },
+  {
+    "opening": "Gedult's Opening",
+    "content": "L'Opening de Gedult commence par f4, une approche agressive visant à contrôler e5 et ouvrir des lignes pour l'attaque."
+  },
+  {
+    "opening": "Global Opening",
+    "content": "L'Opening Global avec a4 et g4 prépare une expansion large sur les deux flancs avec développement hypermoderne."
+  },
+  {
+    "opening": "Grob Opening",
+    "content": "L'Opening Grob (1.g4) est hyper-agressif, sacrifiant la structure pion pour un développement rapide et attaque sur le roi."
+  },
+  {
+    "opening": "Zukertort Opening: Slav Invitation",
+    "content": "L'invitation slave dans l'ouverture Zukertort voit les Noirs jouer c6 tôt, préparant une structure slave tandis que les Blancs gardent la flexibilité avec Nf3."
+  },
+  {
+    "opening": "Zukertort Opening: Speelsmet Gambit",
+    "content": "Le gambit Speelsmet sacrifie un pion central pour un développement rapide et une attaque kingside avec développement du fou fianchetto."
+  },
+  {
+    "opening": "Zukertort Opening: St. George Defense",
+    "content": "Défense St. George avec pion a6 précoce des Noirs, contrôlant b5 et préparant une expansion queenside hypermoderne."
+  },
+  {
+    "opening": "Zukertort Opening: The Walrus",
+    "content": "La variante Morse ('The Walrus') utilise c6 des Noirs pour contrôler d5 tout en gardant un développement flexible face à Nf3."
+  },
+  {
+    "opening": "Zukertort Opening: Vos Gambit",
+    "content": "Gambit Vos où les Blancs sacrifient un pion pour ouvrir le centre et obtenir un avantage de développement avec pression sur e5."
+  },
+  {
+    "opening": "Zukertort Opening: Wade Defense",
+    "content": "Défense Wade avec Bc5 agressif des Noirs attaquant le pion d4 et visant un développement rapide du flanc roi."
+  },
+  {
+    "opening": "Zukertort Opening: Ware Defense",
+    "content": "Défense Ware (a5) des Noirs cherchant à contrôler b4 et perturber le développement harmonieux des Blancs."
+  },
+  {
+    "opening": "King's Indian Attack: Smyslov Variation",
+    "content": "Variante Smyslov de l'attaque King's Indian où les Blancs fianchettent le fou dame pour pression kingside durable."
+  },
+  {
+    "opening": "King's Indian Attack: Spassky Variation",
+    "content": "Variante Spassky avec b3 précoce contrôlant c4 et préparant Bb2 pour contrôle des cases centrales sombres."
+  },
+  {
+    "opening": "King's Indian Attack: Symmetrical Defense",
+    "content": "Défense symétrique où les Noirs copient la structure des Blancs pour neutraliser l'attaque kingside planifiée."
+  },
+  {
+    "opening": "King's Indian Attack: Wahls Defense",
+    "content": "Défense Wahls moderne avec fianchetto noir et développement harmonieux contre l'attaque kingside classique."
+  },
+  {
+    "opening": "Nimzo-Larsen Attack: Classical Variation",
+    "content": "Variante classique de l'attaque Nimzo-Larsen combinant b3 et Nf3 pour développement flexible et contrôle hypermoderne."
+  },
+  {
+    "opening": "Nimzowitsch-Larsen Attack",
+    "content": "Attaque Nimzowitsch-Larsen (1.b3) visant le contrôle de e5 avec Bb2 tout en gardant une structure pion flexible."
+  },
+  {
+    "opening": "Reti Opening",
+    "content": "L'ouverture Réti (1.Nf3 suivi de g3) adopte une approche hypermoderne contrôlant le centre avec pièces plutôt que pions."
+  },
+  {
+    "opening": "Zukertort Opening: Ampel Variation",
+    "content": "Variante Ampel avec roque précoce des Blancs préparant une attaque kingside immédiate après développement minimal."
+  },
+  {
+    "opening": "Zukertort Opening: Old Indian Attack",
+    "content": "Attaque Old Indian où les Blancs jouent d3 et e4 pour imiter une défense indienne inversée avec supériorité structurelle."
+  },
+  {
+    "opening": "Zukertort Opening: Reversed Mexican Defense",
+    "content": "Défense mexicaine inversée avec deux cavaliers développés tôt pour contrôle central et flexibilité tactique."
+  },
+  {
+    "opening": "Zukertort Opening: Santasiere's Folly",
+    "content": "La 'Folie de Santasiere' joue 1.Nf3 d5 2.b3 pour développement ultra-lent mais positionnellement solide à long terme."
+  },
+  {
+    "opening": "Zukertort Opening: Tennison Gambit",
+    "content": "Gambit Tennison (Nf3 d5 2.e4) sacrifie le pion central pour développement ultra-rapide et attaque sur f7."
+  },
+  {
+    "opening": "Zukertort Opening: The Potato",
+    "content": "Variante 'La Pomme de terre' avec a4 agressif des Blancs combiné à Nf3 pour expansion queenside hypermoderne."
+  },
+  {
+    "opening": "King's Indian Attack",
+    "content": "L'attaque King's Indian (Nf3, g3, Bg2, d3, e4, O-O) transpose souvent vers des positions favorables indépendamment de la réponse noire."
+  }
+]
+
+
