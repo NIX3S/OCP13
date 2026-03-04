@@ -1,6 +1,4 @@
-Bien sûr ! J’ai reformatté ton Markdown pour le rendre plus **propre, lisible et esthétique**, avec des sections bien séparées, des tableaux uniformes, des badges alignés et un rendu cohérent. Voici la version améliorée :
 
-```markdown
 # **Chess Agent IA FFE - OCP13**
 
 ![Status](https://img.shields.io/badge/Status-%20Production-blue?style=for-the-badge&logo=docker&logoColor=white)
