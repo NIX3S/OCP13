@@ -38,6 +38,10 @@ export interface AgentRecommendation {
   };
   context: ContextItem[];
   videos: Video[];
+  videosByContext?: {     
+    context_opening: string;
+    videos: Video[];
+  }[]; 
 }
 
 @Injectable({
@@ -50,7 +54,7 @@ export class ChessService {
 
   getTheoreticalMoves(fen: string): Observable<TheoreticalMovesResponse> {
     const encodedFen = encodeURIComponent(fen);
-    console.log(' API:', `${this.apiUrl}/moves/${encodedFen}`);
+    console.log('🔥 API:', `${this.apiUrl}/moves/${encodedFen}`);
     return this.http.get<TheoreticalMovesResponse>(`${this.apiUrl}/moves/${encodedFen}`);
   }
 
