@@ -209,7 +209,7 @@ async def analyze_position(fen: str):
     if chess_collection and model:
         try:
             # Embedding QUERY (LISTE)
-            query_embedding = model.encode([opening]).tolist()  # LISTE
+            query_embedding = model.encode([opening]).tolist()  # ✅ LISTE
             search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
             results = chess_collection.search(
                 data=query_embedding,
