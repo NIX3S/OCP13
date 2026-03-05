@@ -3,7 +3,7 @@
     <h1>♔ Agent IA Échecs FFE ♛</h1>
     <div class="fen-display">
       <code>FEN: {{ fen }}</code>
-      <button class="btn-reset" (click)="resetBoard()">🔄 Reset</button>
+      <button class="btn-reset" (click)="resetBoard()"> Reset</button>
     </div>
   </header>
 
@@ -23,7 +23,7 @@
     <!-- Panneau Agent IA -->
     <div class="agent-panel">
       <div class="section eval" *ngIf="stockfishEval">
-        <h3>⚡ Stockfish</h3>
+        <h3> Stockfish</h3>
         <div class="eval-card">
           <p>Score: <strong>{{ stockfishEval.score }}</strong></p>
           <p>Meilleur: <strong>{{ stockfishEval.bestMove }}</strong></p>
@@ -31,19 +31,31 @@
       </div>
 
       <div class="section agent" *ngIf="agentRecommendation">
-        <h3>🤖 Agent IA FFE</h3>
+        <h3> Agent IA FFE</h3>
         <p><strong>Ouverture</strong> : {{ agentRecommendation.opening }}</p>
         <p><strong>Meilleur coup</strong> : <code>{{ getAgentFirstMove() }}</code></p>
 
         <div class="context" *ngIf="agentRecommendation.context?.length">
-          <h4>📖 Contexte</h4>
-          <ul>
-            <li *ngFor="let ctx of agentRecommendation.context">
-              <strong>{{ ctx.opening }}</strong><br />
-              <small>{{ ctx.content }}</small>
-              (score: {{ ctx.score | number: '1.2-2' }})
-            </li>
-          </ul>
+          <h4> Contexte</h4>
+          <div class="context-card" *ngFor="let ctx of agentRecommendation.context; let i = index">
+            <div class="context-header">
+              <strong>{{ ctx.opening }}</strong>
+              <span class="score-badge">{{ ctx.score | percent:'1.0-1' }}</span>
+            </div>
+            <p>{{ ctx.content }}</p>
+            
+            <!--  VIDÉOS SPÉCIFIQUES à CE contexte -->
+            <div class="context-videos" *ngIf="getVideosForContext(i)?.length">
+              <h5>Vidéos spécifiques</h5>
+              <ul class="video-list">
+                <li *ngFor="let video of getVideosForContext(i)">
+                  <a [href]="video.url" target="_blank" class="video-link">
+                    {{ video.title }} ({{ video.channel }})
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <div class="videos" *ngIf="agentRecommendation.videos?.length">
@@ -59,7 +71,7 @@
       </div>
 
       <div class="section moves" *ngIf="theoreticalMoves.length">
-        <h3>🎯 Coups théoriques (Lichess)</h3>
+        <h3> Coups théoriques (Lichess)</h3>
         <div class="moves-grid">
           <button
             *ngFor="let move of theoreticalMoves"
