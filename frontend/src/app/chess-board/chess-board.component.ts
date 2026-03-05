@@ -57,12 +57,11 @@ resetBoard() {
     // FEN précis après reset
     setTimeout(() => {
       this.fen = this.board.getFEN();
-      console.log(' Reset FEN:', this.fen.substring(0, 30) + '...');
+      console.log('Reset FEN:', this.fen.substring(0, 30) + '...');
       this.loadAnalysis();
     }, 100);
   }
 }
-
 
 
 onMoveChange(event: any) {
@@ -135,7 +134,7 @@ loadAnalysis() {
         videos: analysis.videos  // Vidéos du 1er appel (Chargement...)
       };
       
-      // GESTION VIDÉOS INTELLIGENTE 
+      //  GESTION VIDÉOS INTELLIGENTE (APRES agentRecommendation créé)
       if (analysis.videos[0]?.title === "Chargement...") {
         console.log(' Vidéos en chargement, refresh dans 1s...');
         setTimeout(() => {
@@ -153,6 +152,7 @@ loadAnalysis() {
   });
 }
 
+// FONCTION refreshVideosOnly 
 refreshVideosOnly() {
   if (!this.agentRecommendation) {
     console.error(' agentRecommendation null');
@@ -182,7 +182,7 @@ loadRealData() {
       this.loading = false;
     },
     error: (err) => {
-      console.error('❌ Backend KO:', err);
+      console.error(' Backend KO:', err);
       this.mockData();
       this.loading = false;
     }
