@@ -209,7 +209,7 @@ async def analyze_position(fen: str):
     if chess_collection and model:
         try:
             # Embedding QUERY (LISTE)
-            query_embedding = model.encode([opening]).tolist()  # ✅ LISTE
+            query_embedding = model.encode([opening]).tolist()  #  LISTE
             search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
             results = chess_collection.search(
                 data=query_embedding,
@@ -226,6 +226,14 @@ async def analyze_position(fen: str):
                         "content": hit.entity.get("content", "No theory"), 
                         "score": max(0, 1.0 - float(hit.distance))
                     })
+            
+            videos_by_context = []
+            for ctx in context_items[:3]:  # Top 3 contextes
+                videos = get_youtube_videos_sync(ctx["opening"], max_results=2)
+                videos_by_context.append({
+                    "context_opening": ctx["opening"],
+                    "videos": videos
+                })
             print(f"RAG results: {len(context_items)} hits")
         except Exception as e:
             print(f"RAG error: {e}")
@@ -238,8 +246,9 @@ async def analyze_position(fen: str):
         "opening": opening,
         "moves": moves,
         "evaluation": evaluation,
-        "videos": videos,
-        "context": context_items[:3]
+        "context": context_items[:3],           # RAG contextes
+        "videos_by_context": videos_by_context, # Vidéos PAR contexte !
+        "videos_global": videos                 # Anciennes vidéos globales
     }
     
     duration = (time.time() - start) * 1000
