@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks  # ← UNIQUE ici
+from fastapi import FastAPI, BackgroundTasks  
 from fastapi.middleware.cors import CORSMiddleware
 from googleapiclient.discovery import build
 import chess
@@ -86,28 +86,43 @@ def detect_opening(fen: str) -> dict:
     if cached: return cached
     
     board = chess.Board(fen)
-    fen_board = board.fen().split(' ')[0]  #  TOUT le FEN board
+    fen_board = board.fen().split(' ')[0]
     
-    print(f" Debug FEN: {fen_board}")  # ← DEBUG temporaire
+    print(f" Debug FEN: {fen_board}")
     
-    # RÈGLES PRÉCISES par position exacte
-    if "4P3/8/PPPP1PPP" in fen_board:  # 1.e4 exact
-        name = "King's Pawn Game (1.e4)"
-    elif "3PP3/8/PPPP1PPP" in fen_board:  # 1.d4 exact
-        name = "Queen's Pawn Game (1.d4)"
-    elif "rnbqkbnr/pppp1ppp" in fen_board and "4P3" in fen_board:  # 1.e4 e5
-        name = "Open Game (1.e4 e5)"
-    elif "rnbqkbnr/pp1ppppp" in fen_board and "4P3" in fen_board:  # 1.e4 c5
+    # POSITION DE DÉPART
+    if fen_board == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR":
+        name = "Ouverture Française - Position initiale"
+    
+    # OUVERTURES 100% UNIQUES (rang 5+7)
+    elif "2p5/4P3" in fen_board:  # c5 + e4 = SICILIAN
         name = "Sicilian Defense (1.e4 c5)"
+    elif "4p3/4P3" in fen_board:  # e6 + e4 = FRENCH
+        name = "French Defense (1.e4 e6)"
+    elif "6p1/4P3" in fen_board:  # g5 + e4 = DUTCH
+        name = "Dutch Defense (1.e4 g5)"
+    elif "3p4/2PP4" in fen_board:  # d5 + c4+d4 = QUEEN'S GAMBIT
+        name = "Queen's Gambit (1.d4 d5 2.c4)"
+    elif "4p3/4P3/5N2" in fen_board:  # e5 + e4 + Nf3 = RUY
+        name = "Ruy Lopez Setup (1.e4 e5 2.Nf3)"
+    
+    # BASES (1.e4, 1.d4)
+    elif "4P3/8/PPPP1PPP" in fen_board:  # 1.e4
+        name = "King's Pawn Game (1.e4)"
+    elif "3PP3/8/PPPP1PPP" in fen_board:  # 1.d4
+        name = "Queen's Pawn Game (1.d4)"
+    
     elif board.fullmove_number <= 2:
-        name = "Opening Position"
+        name = "Ouverture Française - Début de partie"
     else:
-        name = f"Position {board.fullmove_number}"
+        name = f"Position tour {board.fullmove_number}"
     
     result = {"name": name, "eco": "A00", "ply": board.fullmove_number}
     cache_set(fen, result, 'opening')
-    print(f"Detected: {name}")  # ← DEBUG
+    print(f" Detected: {name}")
     return result
+
+
 
 @app.get("/api/v1/vector-search/{opening}")
 async def vector_search(opening: str):
@@ -189,26 +204,34 @@ async def analyze_position(fen: str):
     evaluation = get_eval_cached(fen)
     videos = get_youtube_videos_sync(opening)
     
-    # RAG (wikichess_openings)
+    # RAG WIKICHESS
     context_items = []
     if chess_collection and model:
-        query_embedding = model.encode([opening]).tolist()
-        search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
-        results = chess_collection.search(
-            data=query_embedding,
-            anns_field="embedding",
-            param=search_params,
-            limit=3,
-            output_fields=["opening", "content"]
-        )
-        context_items = [{
-            "opening": hit.entity.get("opening"),
-            "content": hit.entity.get("content"), 
-            "score": 1.0 - float(hit.distance)
-        } for hits in results for hit in hits]
+        try:
+            # Embedding QUERY (LISTE)
+            query_embedding = model.encode([opening]).tolist()  # LISTE
+            search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
+            results = chess_collection.search(
+                data=query_embedding,
+                anns_field="embedding",
+                param=search_params,
+                limit=3,
+                output_fields=["opening", "content"] 
+            )
+            context_items = []
+            for hits in results:
+                for hit in hits:
+                    context_items.append({
+                        "opening": hit.entity.get("opening", "Inconnu"),
+                        "content": hit.entity.get("content", "No theory"), 
+                        "score": max(0, 1.0 - float(hit.distance))
+                    })
+            print(f"RAG results: {len(context_items)} hits")
+        except Exception as e:
+            print(f"RAG error: {e}")
     
     if not context_items:
-        context_items = [{"opening": opening, "content": f"Théorie {opening}", "score": 0.95}]
+        context_items = [{"opening": opening, "content": f"Théorie générale {opening}", "score": 0.8}]
     
     result = {
         "fen": fen,
@@ -216,7 +239,7 @@ async def analyze_position(fen: str):
         "moves": moves,
         "evaluation": evaluation,
         "videos": videos,
-        "context": context_items  
+        "context": context_items[:3]
     }
     
     duration = (time.time() - start) * 1000
