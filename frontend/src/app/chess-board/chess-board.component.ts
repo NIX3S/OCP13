@@ -7,7 +7,8 @@ import {
   ChessService,
   ChessMove,
   TheoreticalMovesResponse,
-  AgentRecommendation
+  AgentRecommendation,
+  Video
 } from '../services/chess.service';
 
 
@@ -109,29 +110,26 @@ loadAnalysis() {
     next: (analysis: any) => {
       console.log(' Analyse:', analysis);
       
-      // 1. Moves théoriques 
+      // Moves théoriques 
       this.theoreticalMoves = analysis.moves.moves.map((uci: string) => ({
         uci, whiteWins: 52
       }));
       
-      // 2. Stockfish 
+      // Stockfish 
       this.stockfishEval = {
         score: Math.abs(analysis.evaluation.value) / 100,
         bestMove: analysis.moves.moves[0] || 'e7e5',
         raw: analysis.evaluation
       };
       
-      // 3. Agent Recommendation TOUJOURS initialisé
+      // Agent Recommendation TOUJOURS initialisé
       this.agentRecommendation = {
         fen: analysis.fen,
         opening: analysis.opening,
         moves: analysis.moves,
-        context: [{
-          opening: analysis.opening,
-          content: `Théorie ${analysis.opening}`,
-          score: 0.95
-        }],
-        videos: analysis.videos  // Vidéos du 1er appel (Chargement...)
+        context: analysis.context,       //  VRAI RAG
+        videos: analysis.videos,
+        videosByContext: analysis.videos_by_context           
       };
       
       //  GESTION VIDÉOS INTELLIGENTE (APRES agentRecommendation créé)
@@ -169,6 +167,22 @@ refreshVideosOnly() {
 }
 
 
+//  TrackBy pour perf
+trackByContext(index: number, ctx: any): any {
+  return ctx.opening + ctx.score;
+}
+
+// Récupère vidéos spécifiques à un contexte RAG
+ getVideosForContext(contextIndex: number): Video[] {
+    return this.agentRecommendation?.videosByContext?.[contextIndex]?.videos || [];
+  }
+
+// Classe CSS selon score
+getScoreClass(score: number): string {
+  if (score > 0.9) return 'score-excellent';
+  if (score > 0.7) return 'score-good';
+  return 'score-weak';
+}
 
 
 loadRealData() {
