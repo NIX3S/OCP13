@@ -41,11 +41,22 @@ Deploy: Docker Compose full stack
 
 ## **Lancement en 1 commande**
 
+
 ```bash
 # Clone + lance
 git clone https://github.com/NIX3S/OCP13.git
 cd OCP13
 docker compose up --build -d
+
+#lancement enbedding
+docker ps
+docker exec -it {ID_Conteneur_Backend) bash
+python rag/generate_embeddings.py
+
+#referencement milvius
+docker ps
+docker exec -it {ID_Conteneur_Backend) bash
+python rag/init_milvius.py
 
 # URLs
 Frontend: http://localhost:4200
