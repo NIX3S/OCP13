@@ -1,62 +1,71 @@
 import json
 from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
-import os
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
-print("Initialisation Milvus RAG...")
+print("RAG FINAL Qwen3-Embedding...")
 
-# Connexion
+# Connexion Milvus
 connections.connect("default", host="milvus", port="19530")
-print("Connecté à Milvus")
+print("Milvus OK")
 
-# Schéma
+# Mon MODÈLE EXACT
+model = SentenceTransformer("Qwen/Qwen3-Embedding-0.6B")
+DIM = model.get_sentence_embedding_dimension()
+print(f"Qwen3 dim: {DIM}")
+
+COLLECTION_NAME = "wikichess_openings"
+if utility.has_collection(COLLECTION_NAME):
+    utility.drop_collection(COLLECTION_NAME)
+    print("Reset collection")
+
+# Schéma avec dimensions
 fields = [
     FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
     FieldSchema(name="opening", dtype=DataType.VARCHAR, max_length=100),
     FieldSchema(name="content", dtype=DataType.VARCHAR, max_length=2000),
-    FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=1536),
+    FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=DIM),
 ]
-schema = CollectionSchema(fields, description="Wikichess openings")
-
-COLLECTION_NAME = "wikichess_openings"
-
-# Reset collection
-if utility.has_collection(COLLECTION_NAME):
-    utility.drop_collection(COLLECTION_NAME)
-    print("Collection supprimée")
-
+schema = CollectionSchema(fields, description="Wikichess Qwen3")
 collection = Collection(COLLECTION_NAME, schema=schema)
-print("Collection créée")
+print("Collection {COLLECTION_NAME}")
 
-# Données de test (1536 dim)
-test_articles = [
-    {"opening": "Sicilian Defense", "content": "1.e4 c5 Najdorf Dragon - Défense agressive contre e4", "embedding": [0.1]*1536},
-    {"opening": "Ruy Lopez", "content": "1.e4 e5 2.Cf3 Cc6 3.Ab5 - Espagnole Berlin Marshall", "embedding": [0.2]*1536},
-    {"opening": "Italian Game", "content": "1.e4 e5 2.Cf3 Cc6 3.Ac4 - Giuoco Piano Evans", "embedding": [0.3]*1536},
-    {"opening": "Queen's Gambit", "content": "1.d4 d5 2.c4 - Accepté Refusé Slav Tarrasch", "embedding": [0.4]*1536}
-]
+# REGÉNÈRE les embeddings proprement avec modèle
+with open("rag/wikichess_articles.json") as f:  # Fichier SOURCE
+    articles = json.load(f)
 
-# JSON
-if os.path.exists("rag/wikichess_articles_with_embeddings.json"):
-    with open("rag/wikichess_articles_with_embeddings.json") as f:
-        articles = json.load(f)
-    print(f"{len(articles)} articles JSON trouvés")
-else:
-    articles = test_articles
-    print("Données de test utilisées")
+print(f"{len(articles)} articles à embedder")
 
-# Insert
-openings = [a["opening"] for a in articles]
+# REGÉNÉRATION 
 contents = [a["content"] for a in articles]
-embeddings = [a["embedding"] for a in articles]
-collection.insert([openings, contents, embeddings])
-print(f"{len(articles)} embeddings insérés")
+embeddings = model.encode(contents, batch_size=8, show_progress_bar=True)
 
-# Index
+# VALIDATION + INSERT
+valid_articles = []
+for i, (article, emb) in enumerate(zip(articles, embeddings)):
+    if len(emb) == DIM:
+        valid_articles.append({
+            "opening": article["opening"],
+            "content": article["content"],
+            "embedding": emb.tolist()
+        })
+    else:
+        print(f"Article {i} ignoré: {len(emb)} != {DIM}")
+
+print(f"{len(valid_articles)}/{len(articles)} OK")
+
+# Insert batchs
+batch_size = 10
+for i in range(0, len(valid_articles), batch_size):
+    batch = valid_articles[i:i+batch_size]
+    openings = [a["opening"] for a in batch]
+    contents = [a["content"] for a in batch]
+    embeddings_batch = [a["embedding"] for a in batch]
+    collection.insert([openings, contents, embeddings_batch])
+    print(f" Batch {i//batch_size+1}: {len(batch)}")
+
+# Index + load
 index_params = {"index_type": "IVF_FLAT", "metric_type": "COSINE", "params": {"nlist": 128}}
 collection.create_index("embedding", index_params)
 collection.load()
-print(" Milvus RAG PRÊT !")
-
-# Vérif
-print(" Collections:", utility.list_collections())
-print(" Entités:", collection.num_entities)
+print(f" RAG Qwen3 PRÊT ! {collection.num_entities} entités")
