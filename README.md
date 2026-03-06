@@ -51,12 +51,12 @@ docker compose up --build -d
 #lancement enbedding
 docker ps
 docker exec -it {ID_Conteneur_Backend) bash
-python rag/generate_embeddings.py
+python backend/rag/generate_embeddings.py
 
 #referencement milvius
 docker ps
 docker exec -it {ID_Conteneur_Backend) bash
-python rag/init_milvius.py
+python backend/rag/init_milvius.py
 
 # URLs
 Frontend: http://localhost:4200
