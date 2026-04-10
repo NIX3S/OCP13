@@ -1,23 +1,35 @@
-from fastapi import FastAPI, BackgroundTasks  
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from googleapiclient.discovery import build
 import chess
 import time
 import os
 from dotenv import load_dotenv
-from typing import Dict, List
+from typing import Dict, List, TypedDict, Annotated
 from functools import lru_cache
-import asyncio  # ← AJOUTÉ
+from pydantic import BaseModel
 from pymilvus import connections, Collection
 from sentence_transformers import SentenceTransformer
+from langgraph.graph import StateGraph, END
+from langgraph.graph.message import add_messages
 
+# État LangGraph
+class ChessState(TypedDict):
+    fen: str
+    opening: str
+    moves: Dict
+    evaluation: Dict
+    context: List[Dict]
+    videos: List[Dict]
+    videos_by_context: List[Dict]
+
+# Global LangGraph (singleton)
 model = None
 chess_collection = None
+graph: StateGraph = None
 
+# Initialisation RAG (inchangée)
 try:
-    from sentence_transformers import SentenceTransformer
-    from pymilvus import connections, Collection, utility
-    
     model = SentenceTransformer("Qwen/Qwen3-Embedding-0.6B")
     connections.connect("default", host="milvus", port="19530")
     chess_collection = Collection("wikichess_openings")
@@ -33,18 +45,10 @@ YOUTUBE_API_KEY = os.getenv("YTB_KEY")
 youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
 app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# CACHE INTELLIGENT
-cache = {
-    'moves': {}, 'eval': {}, 'opening': {}, 
-    'videos': {}, 'youtube_queue': []
-}
+# CACHE + FONCTIONS MÉTIER
+cache = {'moves': {}, 'eval': {}, 'opening': {}, 'videos': {}, 'youtube_queue': []}
 
 def cache_get(key: str, cache_type: str, ttl: int = 300):
     if key in cache[cache_type]:
@@ -123,6 +127,83 @@ def detect_opening(fen: str) -> dict:
     return result
 
 
+def router_node(state: ChessState) -> ChessState:
+    """Node 1: Détecte ouverture → décide routing"""
+    state["opening"] = detect_opening(state["fen"])["name"]
+    return state
+
+def rag_node(state: ChessState) -> ChessState:
+    """Node 2: Milvus RAG Wikichess ← CONNECTÉ !"""
+    if chess_collection and model:
+        query_embedding = model.encode([state["opening"]]).tolist()
+        results = chess_collection.search(data=query_embedding, anns_field="embedding",
+                                        param={"metric_type": "COSINE", "params": {"nprobe": 16}},
+                                        limit=3, output_fields=["opening", "content"])
+        state["context"] = [{"opening": hit.entity.get("opening", "Inconnu"), 
+                           "content": hit.entity.get("content", "No theory"), 
+                           "score": max(0, 1.0 - float(hit.distance))} for hits in results for hit in hits]
+    else:
+        state["context"] = [{"opening": state["opening"], "content": f"Théorie générale {state['opening']}", "score": 0.8}]
+    return state
+
+def youtube_node(state: ChessState) -> ChessState:
+    """Node 3: Vidéos contextuelles"""
+    state["videos"] = get_youtube_videos_sync(state["opening"])
+    state["videos_by_context"] = [{"context_opening": ctx["opening"], 
+                                 "videos": get_youtube_videos_sync(ctx["opening"])} 
+                                 for ctx in state["context"][:3]]
+    return state
+
+def chess_node(state: ChessState) -> ChessState:
+    """Node 4: Moves + éval"""
+    state["moves"] = get_moves_cached(state["fen"])
+    state["evaluation"] = get_eval_cached(state["fen"])
+    return state
+
+# INITIALISATION LANGGRAPH AU DEMARRAGE
+def choose_tools(state: ChessState):
+    """CHOIX INTELLIGENT D'OUTILS selon opening"""
+    opening = state["opening"]
+    
+    # Sicilian/French = théorie riche => RAG + vidéo
+    if any(x in opening for x in ["Sicilian", "French", "Queen","King", "Ruy", "Dutch"]):
+        return "rag"
+    
+    # Début de partie simple => Stockfish seulement
+    elif state["fen"].count('/') <= 5 or "tour 1" in opening or "tour 2" in opening:
+        return "chess"
+    
+    # Tout le reste => vidéos générales
+    else:
+        return "youtube"
+
+def init_langgraph():
+    global graph
+    workflow = StateGraph(ChessState)
+    
+    workflow.add_node("router", router_node)
+    workflow.add_node("rag", rag_node)
+    workflow.add_node("youtube", youtube_node)
+    workflow.add_node("chess", chess_node)  # STOCKFISH TOUJOURS
+    
+    workflow.set_entry_point("router")
+    workflow.add_conditional_edges(
+        "router",
+        choose_tools,
+        {"rag": "rag", "chess": "chess", "youtube": "youtube"}
+    )
+    
+    workflow.add_edge("rag", "youtube")
+    workflow.add_edge("youtube", "chess")
+    workflow.add_edge("chess", END)            # Stockfish final
+    
+    graph = workflow.compile()
+
+# Init au démarrage app
+@app.on_event("startup")
+async def startup_event():
+    init_langgraph()
+    print("LangGraph + Milvus workflow initialisé")
 
 @app.get("/api/v1/vector-search/{opening}")
 async def vector_search(opening: str):
@@ -198,69 +279,24 @@ def get_youtube_videos_sync(opening: str, max_results: int = 2) -> list:
 @app.get("/api/v1/analyze/{fen:path}")
 async def analyze_position(fen: str):
     start = time.time()
-    opening_dict = detect_opening(fen)
-    opening = opening_dict["name"]
-    moves = get_moves_cached(fen)
-    evaluation = get_eval_cached(fen)
-    videos = get_youtube_videos_sync(opening)
+    if not graph:
+        return {"error": "LangGraph non initialisé"}
     
-    # RAG WIKICHESS
-    context_items = []
-    if chess_collection and model:
-        try:
-            # Embedding QUERY (LISTE)
-            query_embedding = model.encode([opening]).tolist()  #  LISTE
-            search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
-            results = chess_collection.search(
-                data=query_embedding,
-                anns_field="embedding",
-                param=search_params,
-                limit=3,
-                output_fields=["opening", "content"] 
-            )
-            context_items = []
-            for hits in results:
-                for hit in hits:
-                    context_items.append({
-                        "opening": hit.entity.get("opening", "Inconnu"),
-                        "content": hit.entity.get("content", "No theory"), 
-                        "score": max(0, 1.0 - float(hit.distance))
-                    })
-            
-            videos_by_context = []
-            for ctx in context_items[:3]:  # Top 3 contextes
-                videos = get_youtube_videos_sync(ctx["opening"], max_results=2)
-                videos_by_context.append({
-                    "context_opening": ctx["opening"],
-                    "videos": videos
-                })
-            print(f"RAG results: {len(context_items)} hits")
-        except Exception as e:
-            print(f"RAG error: {e}")
-    
-    if not context_items:
-        context_items = [{"opening": opening, "content": f"Théorie générale {opening}", "score": 0.8}]
-    
-    result = {
-        "fen": fen,
-        "opening": opening,
-        "moves": moves,
-        "evaluation": evaluation,
-        "context": context_items[:3],           # RAG contextes
-        "videos_by_context": videos_by_context, # Vidéos PAR contexte !
-        "videos_global": videos                 # Anciennes vidéos globales
-    }
+    # Exécute LangGraph workflow
+    initial_state = {"fen": fen, "opening": "", "moves": {}, "evaluation": {}, 
+                    "context": [], "videos": [], "videos_by_context": []}
+    result = graph.invoke(initial_state)
     
     duration = (time.time() - start) * 1000
-    print(f"Analyze RAG: {duration:.1f}ms | {opening} | contexts: {len(context_items)}")
+    print(f"LangGraph: {duration:.1f}ms | {result['opening']} | contexts: {len(result['context'])}")
     return result
-
 
 
 @app.get("/api/v1/healthcheck")
 def healthcheck():
     return {
-        "status": "YOUTUBE + CACHE",
+        "status": "LANGGRAPH + YOUTUBE + CACHE",
+        "graph_ready": graph is not None,
         "cache_sizes": {k: len(v) for k, v in cache.items() if k != 'youtube_queue'}
     }
 
